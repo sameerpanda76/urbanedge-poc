@@ -70,6 +70,7 @@ src/urbanedge_app.py
 
 Done ✅ → your app is live at:
 
+https://urbanedge-poc.streamlit.app/
 
 
 🔹 Roadmap
