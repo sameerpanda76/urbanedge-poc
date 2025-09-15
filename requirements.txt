@@ -1,6 +1,6 @@
 streamlit
 pandas
-plotly
 kaleido
+plotly
 fpdf2
 prophet
