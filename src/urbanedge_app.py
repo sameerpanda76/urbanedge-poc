@@ -23,7 +23,7 @@ st.sidebar.markdown(f"**Logged in as:** {tenant}")
 # ------------------------------
 # File Upload (JSON data)
 # ------------------------------
-st.title("📊 Open Data Analytics POC")
+st.title("📊 Open Data Analytics")
 uploaded_file = st.file_uploader("Upload your dataset (JSON)", type="json")
 
 if uploaded_file is not None:
