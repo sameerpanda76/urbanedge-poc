@@ -1,0 +1,6 @@
+streamlit
+pandas
+plotly
+kaleido
+fpdf2
+prophet
