@@ -1,0 +1,8 @@
+[
+  {"timestamp": "2025-01-01", "metric": "energy_kwh", "value": 320},
+  {"timestamp": "2025-01-02", "metric": "energy_kwh", "value": 280},
+  {"timestamp": "2025-01-03", "metric": "energy_kwh", "value": 310},
+  {"timestamp": "2025-01-01", "metric": "waste_tons", "value": 4.2},
+  {"timestamp": "2025-01-02", "metric": "waste_tons", "value": 3.9},
+  {"timestamp": "2025-01-03", "metric": "waste_tons", "value": 4.5}
+]
