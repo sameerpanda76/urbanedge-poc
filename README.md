@@ -73,6 +73,22 @@ Done ✅ → your app is live at:
 https://urbanedge-poc.streamlit.app/
 
 
+## 🔹 Screenshots  
+
+### KPI Snapshot (City Tallinn – energy_kwh)  
+![KPIs](assets/kpis.png)  
+
+### Dashboard Charts  
+![Charts](assets/charts.png)  
+
+### Forecast (30-day Prediction)  
+![Forecast](assets/forecast.png)  
+
+### PDF Export Report  
+![PDF Export](assets/pdf_export.png)  
+
+
+
 🔹 Roadmap
 
  Multi-metric dashboard (Energy + Waste + Traffic side-by-side)
