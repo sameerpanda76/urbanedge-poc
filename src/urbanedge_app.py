@@ -61,6 +61,10 @@ col3.metric("Latest Value", f"{latest:.2f}")
 # ------------------------------
 st.subheader("Trend Over Time")
 fig1 = px.line(metric_df, x="timestamp", y="value", title=f"{selected_metric} over time")
+fig1.update_layout(
+    autosize=True,
+    margin=dict(l=80, r=40, t=40, b=80),  # more margin = smaller inside graph
+)
 st.plotly_chart(fig1, use_container_width=True)
 
 st.subheader("Distribution")
