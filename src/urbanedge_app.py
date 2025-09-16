@@ -4,6 +4,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import json
 import plotly.io as pio
 from io import BytesIO
@@ -108,6 +109,13 @@ st.subheader("📥 Export Options")
 csv = metric_df.to_csv(index=False).encode("utf-8")
 st.download_button("Download CSV", csv, f"{tenant}_{selected_metric}.csv", "text/csv")
 
+def format_date_axis(ax):
+    """Clean up x-axis date labels to avoid overlap."""
+    ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))
+    for label in ax.get_xticklabels():
+        label.set_rotation(45)
+        label.set_horizontalalignment("right")
 
 def generate_matplotlib_chart(metric_df, metric, chart_type="line"):
     fig, ax = plt.subplots(figsize=(6,4))
@@ -152,6 +160,8 @@ def create_pdf_with_charts(tenant, metric, total, avg, latest, chart1=None, char
 
     # Trend chart (Matplotlib line chart)
     trend_fig = generate_matplotlib_chart(metric_df, metric, chart_type="line")
+    ax = trend_fig.axes[0]
+    format_date_axis(ax)
     buf = fig_to_img(trend_fig, dpi=200)
     pdf.add_page()
     pdf.image(buf, x=10, y=20, w=180)
@@ -170,11 +180,11 @@ def create_pdf_with_charts(tenant, metric, total, avg, latest, chart1=None, char
         ax.plot(metric_df["timestamp"], metric_df["value"], label="Actual", marker="o")
 
         # Forecast with confidence intervals
-        # ax.plot(forecast_df["ds"], forecast_df["y"], label="Actual", marker="o")
         ax.plot(forecast_df["ds"], forecast_df["yhat"], label="Forecast", color="red")
         ax.fill_between(forecast_df["ds"], forecast_df["yhat_lower"], forecast_df["yhat_upper"], 
                         color="pink", alpha=0.3, label="Confidence Interval")
         
+        format_date_axis(ax)
         ax.set_title(f"{metric} – 30 Day Forecast")
         ax.set_xlabel("Date")
         ax.set_ylabel("Value")
