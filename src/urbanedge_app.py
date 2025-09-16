@@ -3,6 +3,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
 import json
 import plotly.io as pio
 from io import BytesIO
@@ -71,18 +72,19 @@ st.plotly_chart(fig2, use_container_width=True)
 st.subheader("🔮 Forecasting (Next 30 Days)")
 
 try:
-    forecast_df = metric_df.rename(columns={"timestamp": "ds", "value": "y"})
+    train_df = metric_df.rename(columns={"timestamp": "ds", "value": "y"})
     model = Prophet()
-    model.fit(forecast_df)
+    model.fit(train_df)
 
     future = model.make_future_dataframe(periods=30)
-    forecast = model.predict(future)
+    forecast_df = model.predict(future)
 
+    # Plot actual vs forecast
     fig3 = go.Figure()
-    fig3.add_trace(go.Scatter(x=forecast_df["ds"], y=forecast_df["y"], mode="lines+markers", name="Actual"))
-    fig3.add_trace(go.Scatter(x=forecast["ds"], y=forecast["yhat"], mode="lines", name="Forecast"))
-    fig3.add_trace(go.Scatter(x=forecast["ds"], y=forecast["yhat_upper"], mode="lines", line=dict(width=0), showlegend=False))
-    fig3.add_trace(go.Scatter(x=forecast["ds"], y=forecast["yhat_lower"], mode="lines", fill="tonexty", line=dict(width=0), showlegend=False))
+    fig3.add_trace(go.Scatter(x=train_df["ds"], y=train_df["y"], mode="lines+markers", name="Actual"))
+    fig3.add_trace(go.Scatter(x=forecast_df["ds"], y=forecast_df["yhat"], mode="lines", name="Forecast"))
+    fig3.add_trace(go.Scatter(x=forecast_df["ds"], y=forecast_df["yhat_upper"], mode="lines", line=dict(width=0), showlegend=False))
+    fig3.add_trace(go.Scatter(x=forecast_df["ds"], y=forecast_df["yhat_lower"], mode="lines", fill="tonexty", line=dict(width=0), showlegend=False))
 
     fig3.update_layout(title=f"{selected_metric} – 30 Day Forecast", xaxis_title="Date", yaxis_title="Value")
     st.plotly_chart(fig3, use_container_width=True)
@@ -106,9 +108,29 @@ st.subheader("📥 Export Options")
 csv = metric_df.to_csv(index=False).encode("utf-8")
 st.download_button("Download CSV", csv, f"{tenant}_{selected_metric}.csv", "text/csv")
 
-def fig_to_img(fig, scale=3):
-    """Convert a Plotly figure into PNG bytes using Kaleido."""
-    buf = BytesIO(pio.to_image(fig, format="png", scale=scale))
+
+def generate_matplotlib_chart(metric_df, metric, chart_type="line"):
+    fig, ax = plt.subplots(figsize=(6,4))
+
+    if chart_type == "line":
+        ax.plot(metric_df["timestamp"], metric_df["value"], marker="o", color="green")
+        ax.set_title(f"{metric} Trend Over Time")
+        ax.set_xlabel("Date")
+        ax.set_ylabel("Value")
+
+    elif chart_type == "hist":
+        ax.hist(metric_df["value"], bins=10, color="skyblue", edgecolor="black")
+        ax.set_title(f"{metric} Distribution")
+        ax.set_xlabel("Value")
+        ax.set_ylabel("Frequency")
+
+    fig.tight_layout()
+    return fig
+
+def fig_to_img(fig, dpi=200):
+    """Convert a Matplotlib figure into an in-memory PNG buffer."""
+    buf = BytesIO()
+    fig.savefig(buf, format="png", dpi=dpi, bbox_inches="tight")
     buf.seek(0)
     return buf
 
@@ -126,16 +148,44 @@ def create_pdf_with_charts(tenant, metric, total, avg, latest, chart1=None, char
     pdf.cell(200, 10, f"Metric: {metric}", ln=True)
     pdf.cell(200, 10, f"Total: {total:.2f}", ln=True)
     pdf.cell(200, 10, f"Average: {avg:.2f}", ln=True)
-    pdf.cell(200, 10, f"Latest: {latest:.2f}", ln=True)
+    pdf.cell(200, 10, f"Latest Value: {latest:.2f}", ln=True)
 
-    # Add charts if available
-    for fig in [chart1, chart2, chart3]:
-        if fig:
-            buf = fig_to_img(fig, scale=3)   # High-quality PNG
-            pdf.add_page()
-            pdf.image(buf, x=10, y=20, w=180)
+    # Trend chart (Matplotlib line chart)
+    trend_fig = generate_matplotlib_chart(metric_df, metric, chart_type="line")
+    buf = fig_to_img(trend_fig, dpi=200)
+    pdf.add_page()
+    pdf.image(buf, x=10, y=20, w=180)
 
-    # Return PDF as bytes for Streamlit download
+    # Distribution chart (Matplotlib histogram)
+    hist_fig = generate_matplotlib_chart(metric_df, metric, chart_type="hist")
+    buf = fig_to_img(hist_fig, dpi=200)
+    pdf.add_page()
+    pdf.image(buf, x=10, y=20, w=180)
+
+    # Forecast chart (if provided)
+    if forecast_df is not None and "yhat" in forecast_df:
+        fig, ax = plt.subplots(figsize=(6,4))
+
+        # Actual values
+        ax.plot(metric_df["timestamp"], metric_df["value"], label="Actual", marker="o")
+
+        # Forecast with confidence intervals
+        # ax.plot(forecast_df["ds"], forecast_df["y"], label="Actual", marker="o")
+        ax.plot(forecast_df["ds"], forecast_df["yhat"], label="Forecast", color="red")
+        ax.fill_between(forecast_df["ds"], forecast_df["yhat_lower"], forecast_df["yhat_upper"], 
+                        color="pink", alpha=0.3, label="Confidence Interval")
+        
+        ax.set_title(f"{metric} – 30 Day Forecast")
+        ax.set_xlabel("Date")
+        ax.set_ylabel("Value")
+        ax.legend()
+        fig.tight_layout()
+
+        buf = fig_to_img(fig, dpi=200)
+        pdf.add_page()
+        pdf.image(buf, x=10, y=20, w=180)
+
+    # Return PDF as bytes
     return bytes(pdf.output(dest="S"))
 
 if st.button("Generate PDF Report"):
@@ -145,9 +195,8 @@ if st.button("Generate PDF Report"):
         total,
         avg,
         latest,
-        fig1 if "fig1" in locals() else None,
-        fig2 if "fig2" in locals() else None,
-        fig3 if "fig3" in locals() else None
+        metric_df,
+        forecast_df if "forecast" in locals() else None
     )   
     st.download_button(
         label="Download PDF",
