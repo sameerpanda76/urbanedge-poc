@@ -16,6 +16,36 @@ from fpdf import FPDF  # for PDF export
 from data.tenant_datasets import tenant_datasets
 import cmdstanpy
 
+def ensure_cmdstan_in_background():
+    """Run CmdStan installation non-blocking in a background thread."""
+    try:
+        if not cmdstanpy.cmdstan_path():
+            st.info("🔧 Setting up forecasting backend (first load will take a few minutes)...")
+            
+            def installer():
+                try:
+                    print("CmdStan install started...")
+                    cmdstanpy.install_cmdstan()
+                    print("✅ CmdStan install finished!")
+                    st.session_state["cmdstan_ready"] = True
+                except Exception as ex:
+                    print("❌ CmdStan install FAILED:", ex)
+                    st.session_state["cmdstan_install_error"] = str(ex)
+
+            thread = threading.Thread(target=installer, daemon=True)
+            thread.start()
+            return False
+        else:
+            st.session_state["cmdstan_ready"] = True
+            return True
+
+    except Exception as ex:
+        st.session_state["cmdstan_install_error"] = str(ex)
+        return False
+    
+# Initialize cmdstan status
+cmdstan_ready = ensure_cmdstan_in_background()
+
 # ------------------------------
 # Mock Login (for tenants)
 # ------------------------------
