@@ -1,6 +1,7 @@
 import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+import cmdstanpy
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -77,6 +78,7 @@ st.plotly_chart(fig2, use_container_width=True)
 st.subheader("🔮 Forecasting (Next 30 Days)")
 
 try:
+    cmdstanpy.install_cmdstan()
     train_df = metric_df.rename(columns={"timestamp": "ds", "value": "y"})
     model = Prophet()
     model.fit(train_df)
@@ -97,6 +99,7 @@ try:
 except Exception as e:
     st.warning("⚠️ Not enough data for forecasting. Upload a larger dataset.")
     st.write(e)
+    print("CmdStan install failed:", e)
 
 # ------------------------------
 # Data Preview
