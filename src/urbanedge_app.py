@@ -20,11 +20,11 @@ from data.tenant_datasets import tenant_datasets
 try:
     path = cmdstanpy.cmdstan_path()
     if not os.path.exists(path):
-        raise ValueError("CmdStan path broken")
+        raise ValueError()
 except Exception:
-    with st.spinner("🔧 Setting up Prophet backend... This may take ~3–6 minutes"):
-        cmdstanpy.install_cmdstan()
-    st.success("✅ Prophet backend is ready.")
+    with st.spinner("🔧 Setting up Prophet backend... (downloading prebuilt CmdStan)"):
+        cmdstanpy.install_cmdstan(compile=False)
+    st.success("✅ Prophet backend installed!")
 
 # ------------------------------
 # Mock Login (for tenants)
