@@ -17,9 +17,14 @@ from fpdf import FPDF  # for PDF export
 from data.tenant_datasets import tenant_datasets
 
 # Ensure CmdStan exists
-if not cmdstanpy.cmdstan_path() or not os.path.exists(cmdstanpy.cmdstan_path()):
-    with st.spinner("🔧 Setting up Prophet backend... This may take ~3–6 minutes. Please wait."):
+try:
+    path = cmdstanpy.cmdstan_path()
+    if not os.path.exists(path):
+        raise ValueError("CmdStan path broken")
+except Exception:
+    with st.spinner("🔧 Setting up Prophet backend... This may take ~3–6 minutes"):
         cmdstanpy.install_cmdstan()
+    st.success("✅ Prophet backend is ready.")
 
 # ------------------------------
 # Mock Login (for tenants)
