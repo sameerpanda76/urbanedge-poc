@@ -9,23 +9,41 @@ import json
 import plotly.express as px
 import plotly.graph_objs as go
 import cmdstanpy
+import subprocess
+import platform
 # import plotly.io as pio
 from prophet import Prophet
 from io import BytesIO
 from fpdf import FPDF  # for PDF export
 from data.tenant_datasets import tenant_datasets
 
-# Ensure CmdStan exists
+# ✅ Point to Prophet's bundled CmdStan
+bundled_path = os.path.join(
+    os.path.dirname(Prophet.__module__.replace("__init__.py", "")),
+    "stan_model",
+    "cmdstan-2.33.1"
+)
+
 try:
-    import prophet
-    bundled_path = os.path.join(
-        os.path.dirname(prophet.__file__),
-        "stan_model", 
-        "cmdstan-2.33.1"
-    )
     cmdstanpy.set_cmdstan_path(bundled_path)
-except Exception as e:
-    st.error(f"CmdStan backend error: {e}")
+    cmdstanpy.validate_cmdstan_path(bundled_path)
+
+except Exception:
+    # ✅ Only build on Linux servers (streamlit cloud)
+    if platform.system() == "Linux":
+        with st.spinner("🛠 Building Prophet's CmdStan backend (~60–120 seconds)..."):
+            try:
+                subprocess.run(
+                    ["make", "build"],
+                    cwd=bundled_path,
+                    capture_output=True,
+                    check=True
+                )
+                cmdstanpy.set_cmdstan_path(bundled_path)
+            except Exception as e:
+                st.error(f"CmdStan backend failed to build: {e}")
+    else:
+        st.warning("⚠ CmdStan missing & cannot build on this OS. Forecasting disabled on Windows.")
 
 # ------------------------------
 # Mock Login (for tenants)
