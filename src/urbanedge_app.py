@@ -18,12 +18,15 @@ from data.tenant_datasets import tenant_datasets
 
 # Ensure CmdStan exists
 try:
+    # Check if CmdStan exists
     path = cmdstanpy.cmdstan_path()
     if not os.path.exists(path):
         raise ValueError()
 except Exception:
     with st.spinner("🔧 Installing CmdStan (~3 minutes)..."):
+        install_dir = os.getcwd()  # Save where Streamlit expects to run
         cmdstanpy.install_cmdstan(version="2.31.0")
+        os.chdir(install_dir)  # FIX: Return to main project folder
     st.success("✅ CmdStan ready!")
 
 # ------------------------------
