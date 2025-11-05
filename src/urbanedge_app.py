@@ -22,9 +22,9 @@ try:
     if not os.path.exists(path):
         raise ValueError()
 except Exception:
-    with st.spinner("🔧 Setting up Prophet backend... (downloading prebuilt CmdStan)"):
-        cmdstanpy.install_cmdstan(compile=False)
-    st.success("✅ Prophet backend installed!")
+    with st.spinner("🔧 Installing CmdStan (~3 minutes)..."):
+        cmdstanpy.install_cmdstan(version="2.31.0")
+    st.success("✅ CmdStan ready!")
 
 # ------------------------------
 # Mock Login (for tenants)
