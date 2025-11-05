@@ -4,6 +4,3 @@ backgroundColor = "#FFFFFF"
 secondaryBackgroundColor = "#F7F9FB"
 textColor = "#333333"
 font = "sans serif"
-
-[global]
-postInstallScript = "postInstall.sh"
