@@ -2,31 +2,30 @@ import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import streamlit as st
-import threading
 import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
+#import matplotlib.pyplot as plt
+#import matplotlib.dates as mdates
 import json
 import plotly.express as px
 import plotly.graph_objs as go
 import cmdstanpy
 # import plotly.io as pio
-from io import BytesIO
 from prophet import Prophet
+from io import BytesIO
 from fpdf import FPDF  # for PDF export
 from data.tenant_datasets import tenant_datasets
 
 # Ensure CmdStan exists
 try:
-    cmdstan_dir = cmdstanpy.cmdstan_path()
-    if os.path.exists(cmdstan_dir):
-        cmdstanpy.set_cmdstan_path(cmdstan_dir)
-except Exception:
-    with st.spinner("🔧 Installing CmdStan (~3 minutes)..."):
-        install_dir = os.getcwd()
-        cmdstanpy.install_cmdstan(version="2.31.0", overwrite=True)
-        cmdstanpy.set_cmdstan_path(cmdstanpy.cmdstan_path())
-        os.chdir(install_dir)
+    import prophet
+    bundled_path = os.path.join(
+        os.path.dirname(prophet.__file__),
+        "stan_model", 
+        "cmdstan-2.33.1"
+    )
+    cmdstanpy.set_cmdstan_path(bundled_path)
+except Exception as e:
+    st.error(f"CmdStan backend error: {e}")
 
 # ------------------------------
 # Mock Login (for tenants)
