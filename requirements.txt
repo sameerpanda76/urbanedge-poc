@@ -4,5 +4,5 @@ plotly
 kaleido
 fpdf2
 matplotlib
-prophet==1.1.4
+prophet==1.1.5
 numpy<2.0
