@@ -17,33 +17,12 @@ from io import BytesIO
 from fpdf import FPDF  # for PDF export
 from data.tenant_datasets import tenant_datasets
 
-# ✅ Point to Prophet's bundled CmdStan
-bundled_path = os.path.join(
-    os.path.dirname(Prophet.__module__.replace("__init__.py", "")),
-    "stan_model",
-    "cmdstan-2.33.1"
-)
-
 try:
-    cmdstanpy.set_cmdstan_path(bundled_path)
-    cmdstanpy.validate_cmdstan_path(bundled_path)
-
-except Exception:
-    # ✅ Only build on Linux servers (streamlit cloud)
-    if platform.system() == "Linux":
-        with st.spinner("🛠 Building Prophet's CmdStan backend (~60–120 seconds)..."):
-            try:
-                subprocess.run(
-                    ["make", "build"],
-                    cwd=bundled_path,
-                    capture_output=True,
-                    check=True
-                )
-                cmdstanpy.set_cmdstan_path(bundled_path)
-            except Exception as e:
-                st.error(f"CmdStan backend failed to build: {e}")
-    else:
-        st.warning("⚠ CmdStan missing & cannot build on this OS. Forecasting disabled on Windows.")
+    cmdstanpy.set_cmdstan_path(cmdstanpy.cmdstan_path())
+except:
+    with st.spinner("🔧 Installing CmdStan (~5 minutes)..."):
+        cmdstanpy.install_cmdstan(overwrite=True)
+        cmdstanpy.set_cmdstan_path(cmdstanpy.cmdstan_path())
 
 # ------------------------------
 # Mock Login (for tenants)
@@ -109,7 +88,7 @@ st.subheader("🔮 Forecasting (Next 30 Days)")
 
 try:
     train_df = metric_df.rename(columns={"timestamp": "ds", "value": "y"})
-    model = Prophet(stan_backend='CMDSTANPY')
+    model = Prophet()
     model.fit(train_df)
 
     future = model.make_future_dataframe(periods=30)

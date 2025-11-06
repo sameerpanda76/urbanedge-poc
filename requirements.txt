@@ -5,6 +5,6 @@ kaleido>=0.2.1
 fpdf2==2.7.8
 matplotlib>=3.8.0
 prophet==1.1.5
-cmdstanpy>=1.1.0
+cmdstanpy
 numpy<2.0
 # rebuild
