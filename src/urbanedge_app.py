@@ -7,6 +7,7 @@ import matplotlib.dates as mdates
 import json
 import plotly.express as px
 import plotly.graph_objs as go
+import cmdstanpy
 
 from prophet import Prophet
 from io import BytesIO
@@ -14,6 +15,9 @@ from fpdf import FPDF  # for PDF export
 from data.tenant_datasets import tenant_datasets
 
 st.write("✅ Starting UrbanEdge...")
+
+if not os.path.exists(cmdstanpy.cmdstan_path()):
+    cmdstanpy.install_cmdstan()
 
 # ------------------------------
 # Mock Login (for tenants)
