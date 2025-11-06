@@ -4,8 +4,7 @@ plotly
 kaleido
 fpdf2
 matplotlib
-prophet==1.1.5
-pystan==3.7.0
-httpstan==4.10.1
+prophet==1.0
+pystan==2.19.1.1
 numpy
 # rebuild
