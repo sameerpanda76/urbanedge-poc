@@ -11,6 +11,5 @@ dependencies:
       - kaleido
       - fpdf2
       - matplotlib
-      - prophet>=1.2  # Upgrade to version compatible with Python 3.11
+      - prophet==1.1.1
       - numpy<2.0
-      - cmdstanpy>=1.3
