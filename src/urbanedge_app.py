@@ -16,6 +16,7 @@ from io import BytesIO
 from fpdf import FPDF  # for PDF export
 from data.tenant_datasets import tenant_datasets
 
+st.write("✅ App starting... logs visible")
 
 # ---------------------------------------
 # ✅ Ensure CmdStan backend is correctly set
@@ -171,11 +172,11 @@ def create_pdf_with_charts(tenant, metric, total, avg, latest, chart1=None, char
     pdf.add_page()
 
     # Title
-    pdf.set_font("Arial", "B", 16)
+    pdf.set_font("Helvetica", "B", 16)
     pdf.cell(200, 10, f"UrbanEdge Report - {tenant}", ln=True, align="C")
 
     # Metrics
-    pdf.set_font("Arial", size=12)
+    pdf.set_font("Helvetica", size=12)
     pdf.cell(200, 10, f"Metric: {metric}", ln=True)
     pdf.cell(200, 10, f"Total: {total:.2f}", ln=True)
     pdf.cell(200, 10, f"Average: {avg:.2f}", ln=True)
