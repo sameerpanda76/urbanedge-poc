@@ -16,13 +16,7 @@ from data.tenant_datasets import tenant_datasets
 
 st.write("✅ Starting UrbanEdge...")
 
-try:
-    cmdstan_path = cmdstanpy.cmdstan_path()
-except ValueError:
-    st.info("CmdStan not found. Installing CmdStan...")
-    cmdstanpy.install_cmdstan()
-    cmdstan_path = cmdstanpy.cmdstan_path()  # should succeed now
-
+cmdstan_path = cmdstanpy.cmdstan_path()  # should already exist
 st.write(f"✅ CmdStan path: {cmdstan_path}")
 
 # ------------------------------
