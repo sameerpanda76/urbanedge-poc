@@ -79,8 +79,10 @@ st.subheader("🔮 Forecasting (Next 30 Days)")
 forecast_df = None
 
 try:
+    
     train_df = metric_df.rename(columns={"timestamp": "ds", "value": "y"})
 
+    # model = Prophet()
     model = Prophet()
     model.fit(train_df)
 
