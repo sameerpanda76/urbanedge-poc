@@ -6,4 +6,3 @@ fpdf2
 matplotlib
 prophet==1.1.4
 numpy<2.0
-pystan==2.19.1.1  # force rebuild
