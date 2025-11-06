@@ -16,18 +16,24 @@ from io import BytesIO
 from fpdf import FPDF  # for PDF export
 from data.tenant_datasets import tenant_datasets
 
-st.write("✅ App starting... logs visible")
+st.write("✅ Starting UrbanEdge...")
 
-# ---------------------------------------
-# ✅ Ensure CmdStan backend is correctly set
-# ---------------------------------------
-try:
-    cmdstan_dir = cmdstanpy.cmdstan_path()
-    cmdstanpy.set_cmdstan_path(cmdstan_dir)
-except Exception:
+# ✅ Safe CmdStan load for cloud
+def ensure_cmdstan():
+    try:
+        path = cmdstanpy.cmdstan_path()
+        if os.path.exists(path) and os.path.isfile(os.path.join(path, "bin", "stansummary.exe")):
+            cmdstanpy.set_cmdstan_path(path)
+            return
+    except:
+        pass
+
+    # Install only if missing
     with st.spinner("🔧 Installing CmdStan (~5 minutes)..."):
         cmdstanpy.install_cmdstan(overwrite=True)
         cmdstanpy.set_cmdstan_path(cmdstanpy.cmdstan_path())
+
+ensure_cmdstan()
 
 # ------------------------------
 # Mock Login (for tenants)
