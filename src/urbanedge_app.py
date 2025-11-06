@@ -1,6 +1,5 @@
 import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -8,32 +7,13 @@ import matplotlib.dates as mdates
 import json
 import plotly.express as px
 import plotly.graph_objs as go
-import cmdstanpy
 
-# import plotly.io as pio
 from prophet import Prophet
 from io import BytesIO
 from fpdf import FPDF  # for PDF export
 from data.tenant_datasets import tenant_datasets
 
 st.write("✅ Starting UrbanEdge...")
-
-# ✅ Safe CmdStan load for cloud
-def ensure_cmdstan():
-    try:
-        path = cmdstanpy.cmdstan_path()
-        if os.path.exists(path) and os.path.isfile(os.path.join(path, "bin", "stansummary.exe")):
-            cmdstanpy.set_cmdstan_path(path)
-            return
-    except:
-        pass
-
-    # Install only if missing
-    with st.spinner("🔧 Installing CmdStan (~5 minutes)..."):
-        cmdstanpy.install_cmdstan(overwrite=True)
-        cmdstanpy.set_cmdstan_path(cmdstanpy.cmdstan_path())
-
-ensure_cmdstan()
 
 # ------------------------------
 # Mock Login (for tenants)
@@ -96,15 +76,12 @@ st.plotly_chart(fig2, use_container_width=True)
 # Forecasting Module
 # ------------------------------
 st.subheader("🔮 Forecasting (Next 30 Days)")
+forecast_df = None
 
 try:
     train_df = metric_df.rename(columns={"timestamp": "ds", "value": "y"})
 
-     # ✅ FORCE Prophet to use system CmdStan install
-    cmdstan_dir = cmdstanpy.cmdstan_path()
-    cmdstanpy.set_cmdstan_path(cmdstan_dir)
-
-    model = Prophet(stan_backend='CMDSTANPY')
+    model = Prophet()
     model.fit(train_df)
 
     future = model.make_future_dataframe(periods=30)
@@ -236,7 +213,7 @@ if st.button("Generate PDF Report"):
         avg,
         latest,
         metric_df,
-        forecast_df if "forecast" in locals() else None
+        forecast_df
     )   
     st.download_button(
         label="Download PDF",
