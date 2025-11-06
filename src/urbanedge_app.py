@@ -9,17 +9,21 @@ import json
 import plotly.express as px
 import plotly.graph_objs as go
 import cmdstanpy
-import subprocess
-import platform
+
 # import plotly.io as pio
 from prophet import Prophet
 from io import BytesIO
 from fpdf import FPDF  # for PDF export
 from data.tenant_datasets import tenant_datasets
 
+
+# ---------------------------------------
+# ✅ Ensure CmdStan backend is correctly set
+# ---------------------------------------
 try:
-    cmdstanpy.set_cmdstan_path(cmdstanpy.cmdstan_path())
-except:
+    cmdstan_dir = cmdstanpy.cmdstan_path()
+    cmdstanpy.set_cmdstan_path(cmdstan_dir)
+except Exception:
     with st.spinner("🔧 Installing CmdStan (~5 minutes)..."):
         cmdstanpy.install_cmdstan(overwrite=True)
         cmdstanpy.set_cmdstan_path(cmdstanpy.cmdstan_path())
@@ -88,7 +92,12 @@ st.subheader("🔮 Forecasting (Next 30 Days)")
 
 try:
     train_df = metric_df.rename(columns={"timestamp": "ds", "value": "y"})
-    model = Prophet()
+
+     # ✅ FORCE Prophet to use system CmdStan install
+    cmdstan_dir = cmdstanpy.cmdstan_path()
+    cmdstanpy.set_cmdstan_path(cmdstan_dir)
+
+    model = Prophet(stan_backend='CMDSTANPY')
     model.fit(train_df)
 
     future = model.make_future_dataframe(periods=30)
