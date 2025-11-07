@@ -8,9 +8,9 @@ import json
 import plotly.express as px
 import plotly.graph_objs as go
 import cmdstanpy
+import tempfile
 
 from prophet import Prophet
-from io import BytesIO
 from fpdf import FPDF  # for PDF export
 from data.tenant_datasets import tenant_datasets
 
@@ -147,12 +147,13 @@ def generate_matplotlib_chart(metric_df, metric, chart_type="line"):
     fig.tight_layout()
     return fig
 
-def fig_to_img(fig, dpi=200):
-    """Convert a Matplotlib figure into an in-memory PNG buffer."""
-    buf = BytesIO()
-    fig.savefig(buf, format="png", dpi=dpi, bbox_inches="tight")
-    buf.seek(0)
-    return buf
+def fig_to_temp_png(fig, dpi=200):
+    """Save a Matplotlib figure to a temporary PNG file and return its path."""
+    tmp_file = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+    fig.savefig(tmp_file.name, format="png", dpi=dpi, bbox_inches="tight")
+    tmp_file.close()
+    return tmp_file.name
+
 
 # Export PDF
 def create_pdf_with_charts(tenant, metric, total, avg, latest, chart1=None, chart2=None, chart3=None):
@@ -174,13 +175,13 @@ def create_pdf_with_charts(tenant, metric, total, avg, latest, chart1=None, char
     trend_fig = generate_matplotlib_chart(metric_df, metric, chart_type="line")
     ax = trend_fig.axes[0]
     format_date_axis(ax)
-    buf = fig_to_img(trend_fig, dpi=200)
+    buf = fig_to_temp_png(trend_fig, dpi=200)
     pdf.add_page()
     pdf.image(buf, x=10, y=20, w=180)
 
     # Distribution chart (Matplotlib histogram)
     hist_fig = generate_matplotlib_chart(metric_df, metric, chart_type="hist")
-    buf = fig_to_img(hist_fig, dpi=200)
+    buf = fig_to_temp_png(hist_fig, dpi=200)
     pdf.add_page()
     pdf.image(buf, x=10, y=20, w=180)
 
@@ -203,12 +204,13 @@ def create_pdf_with_charts(tenant, metric, total, avg, latest, chart1=None, char
         ax.legend()
         fig.tight_layout()
 
-        buf = fig_to_img(fig, dpi=200)
+        buf = fig_to_temp_png(fig, dpi=200)
         pdf.add_page()
         pdf.image(buf, x=10, y=20, w=180)
 
     # Return PDF as bytes
-    return bytes(pdf.output(dest="S"))
+    # return bytes(pdf.output(dest="S"))
+    return pdf.output(dest="S").encode("latin1")
 
 if st.button("Generate PDF Report"):
     pdf_buffer = create_pdf_with_charts(
