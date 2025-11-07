@@ -1,14 +1,6 @@
 import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-# Disable Stan and enforce PyTorch backend
-os.environ["STAN_BACKEND"] = "PYTORCH"
-os.environ["PROPHET_NO_STAN"] = "1"
-os.environ["CMDSTAN"] = "False"
-
-import prophet.models
-prophet.models._is_cmdstanpy_installed = lambda: False
-
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -18,6 +10,7 @@ import plotly.express as px
 import plotly.graph_objs as go
 import tempfile
 
+from neuralprophet import NeuralProphet
 from prophet import Prophet
 from fpdf import FPDF  # for PDF export
 from data.tenant_datasets import tenant_datasets
@@ -92,19 +85,32 @@ forecast_df = None
 try:
     
     train_df = metric_df.rename(columns={"timestamp": "ds", "value": "y"})
+    train_df = train_df[["ds", "y"]] 
 
-    model = Prophet()
-    model.fit(train_df)
 
-    future = model.make_future_dataframe(periods=30)
+    model = NeuralProphet()
+    model.fit(train_df,freq="D")
+
+    future = model.make_future_dataframe(train_df,periods=30)
     forecast_df = model.predict(future)
 
     # Plot actual vs forecast
     fig3 = go.Figure()
     fig3.add_trace(go.Scatter(x=train_df["ds"], y=train_df["y"], mode="lines+markers", name="Actual"))
-    fig3.add_trace(go.Scatter(x=forecast_df["ds"], y=forecast_df["yhat"], mode="lines", name="Forecast"))
-    fig3.add_trace(go.Scatter(x=forecast_df["ds"], y=forecast_df["yhat_upper"], mode="lines", line=dict(width=0), showlegend=False))
-    fig3.add_trace(go.Scatter(x=forecast_df["ds"], y=forecast_df["yhat_lower"], mode="lines", fill="tonexty", line=dict(width=0), showlegend=False))
+
+    forecast_col = "yhat1" if "yhat1" in forecast_df.columns else "yhat"
+
+    fig3.add_trace(go.Scatter(
+        x=forecast_df["ds"],
+        y=forecast_df[forecast_col],
+        mode="lines",
+        name="Forecast"
+    ))
+
+    # Confidence intervals may not always exist in NP, so check safely
+    if "yhat1_upper" in forecast_df.columns and "yhat1_lower" in forecast_df.columns:
+        fig3.add_trace(go.Scatter(x=forecast_df["ds"], y=forecast_df["yhat1_upper"], mode="lines", line=dict(width=0), showlegend=False))
+        fig3.add_trace(go.Scatter(x=forecast_df["ds"], y=forecast_df["yhat1_lower"], mode="lines", fill="tonexty", line=dict(width=0), showlegend=False))
 
     fig3.update_layout(title=f"{selected_metric} – 30 Day Forecast", xaxis_title="Date", yaxis_title="Value")
     st.plotly_chart(fig3, use_container_width=True)
@@ -193,16 +199,36 @@ def create_pdf_with_charts(tenant, metric, total, avg, latest, chart1=None, char
     pdf.image(buf, x=10, y=20, w=180)
 
     # Forecast chart (if provided)
-    if forecast_df is not None and "yhat" in forecast_df:
+    # if forecast_df is not None and "yhat" in forecast_df:
+    # if forecast_df is not None and ("yhat1" in forecast_df or "yhat" in forecast_df):
+    if forecast_df is not None:
         fig, ax = plt.subplots(figsize=(6,4))
 
         # Actual values
         ax.plot(metric_df["timestamp"], metric_df["value"], label="Actual", marker="o")
 
         # Forecast with confidence intervals
-        ax.plot(forecast_df["ds"], forecast_df["yhat"], label="Forecast", color="red")
-        ax.fill_between(forecast_df["ds"], forecast_df["yhat_lower"], forecast_df["yhat_upper"], 
-                        color="pink", alpha=0.3, label="Confidence Interval")
+        # ax.plot(forecast_df["ds"], forecast_df["yhat"], label="Forecast", color="red")
+        
+        forecast_col = "yhat1" if "yhat1" in forecast_df.columns else "yhat"
+        ax.plot(forecast_df["ds"], forecast_df[forecast_col], label="Forecast", color="red")
+
+        # ax.fill_between(forecast_df["ds"], forecast_df["yhat_lower"], forecast_df["yhat_upper"], 
+        #                color="pink", alpha=0.3, label="Confidence Interval")
+
+        upper_col = "yhat1_upper" if "yhat1_upper" in forecast_df.columns else "yhat_upper"
+        lower_col = "yhat1_lower" if "yhat1_lower" in forecast_df.columns else "yhat_lower"
+
+        if upper_col in forecast_df and lower_col in forecast_df:
+            ax.fill_between(
+                forecast_df["ds"],
+                forecast_df[lower_col],
+                forecast_df[upper_col],
+                color="pink",
+                alpha=0.3,
+                label="Confidence Interval"
+            )
+
         
         format_date_axis(ax)
         ax.set_title(f"{metric} – 30 Day Forecast")
