@@ -8,5 +8,5 @@ prophet==1.1.6
 numpy<2.0
 
 # Force dependency solver to avoid Stan
-cmdstanpy==0.0.0
-stanio==0.0.0
+cmdstanpy==99.99.99
+stanio==99.99.99
