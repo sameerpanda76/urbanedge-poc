@@ -1,9 +1,13 @@
 import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-# Force Prophet to think cmdstanpy is not installed
-os.environ["CMDSTAN"] = "False"
+# Disable Stan and enforce PyTorch backend
 os.environ["STAN_BACKEND"] = "PYTORCH"
+os.environ["PROPHET_NO_STAN"] = "1"
+os.environ["CMDSTAN"] = "False"
+
+import prophet.models
+prophet.models._is_cmdstanpy_installed = lambda: False
 
 import streamlit as st
 import pandas as pd
