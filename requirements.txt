@@ -1,5 +1,3 @@
---no-binary=cmdstanpy
-cmdstanpy==0.0.0
 streamlit==1.51.0
 prophet==1.1.5
 pandas
@@ -8,3 +6,6 @@ matplotlib
 plotly
 kaleido
 fpdf2
+
+# Force pip to ignore cmdstanpy
+cmdstanpy==99999999
