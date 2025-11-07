@@ -87,9 +87,15 @@ try:
     train_df = train_df[["ds", "y"]] 
 
 
-    model = NeuralProphet()
-    model.fit(train_df,freq="D")
+    model = NeuralProphet(
+    trainer_config={
+        "enable_checkpointing": False,   # ✅ prevents saving/loading checkpoints
+        "logger": False,                 # ✅ prevents lightning_logs folder
+        "callbacks": [],                 # ✅ prevents progress bar and checkpoint callbacks
+        }
+    )
 
+    model.fit(train_df,freq="D")
     future = model.make_future_dataframe(train_df,periods=30)
     forecast_df = model.predict(future)
 
