@@ -7,5 +7,5 @@ plotly
 kaleido
 fpdf2
 
-# Force pip to ignore cmdstanpy
-cmdstanpy==99999999
+# Prevent cmdstanpy installation
+cmdstanpy==0
