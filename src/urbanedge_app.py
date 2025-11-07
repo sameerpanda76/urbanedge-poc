@@ -11,7 +11,6 @@ import plotly.graph_objs as go
 import tempfile
 
 from neuralprophet import NeuralProphet
-from prophet import Prophet
 from fpdf import FPDF  # for PDF export
 from data.tenant_datasets import tenant_datasets
 
