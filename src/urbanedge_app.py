@@ -1,5 +1,10 @@
 import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+import prophet.models
+prophet.models._is_cmdstanpy_installed = lambda: False
+prophet.models._get_backend = lambda *args, **kwargs: None  
+
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -12,6 +17,8 @@ import tempfile
 from prophet import Prophet
 from fpdf import FPDF  # for PDF export
 from data.tenant_datasets import tenant_datasets
+
+
 
 st.write("✅ Starting UrbanEdge...")
 
