@@ -1,6 +1,10 @@
 import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+# Force Prophet to think cmdstanpy is not installed
+os.environ["CMDSTAN"] = "False"
+os.environ["STAN_BACKEND"] = "PYTORCH"
+
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
