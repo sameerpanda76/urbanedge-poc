@@ -1,6 +1,5 @@
 streamlit==1.51.0
 prophet==1.1.5
-cmdstanpy==1.2.4
 pandas
 numpy<2.0
 matplotlib

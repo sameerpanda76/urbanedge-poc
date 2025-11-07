@@ -7,7 +7,6 @@ import matplotlib.dates as mdates
 import json
 import plotly.express as px
 import plotly.graph_objs as go
-import cmdstanpy
 import tempfile
 
 from prophet import Prophet
@@ -15,9 +14,6 @@ from fpdf import FPDF  # for PDF export
 from data.tenant_datasets import tenant_datasets
 
 st.write("✅ Starting UrbanEdge...")
-
-cmdstan_path = cmdstanpy.cmdstan_path()  # should already exist
-st.write(f"✅ CmdStan path: {cmdstan_path}")
 
 # ------------------------------
 # Mock Login (for tenants)
