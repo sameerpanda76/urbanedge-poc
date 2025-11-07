@@ -1,9 +1,6 @@
 import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-import prophet.models
-prophet.models._is_cmdstanpy_installed = lambda: False
-
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
