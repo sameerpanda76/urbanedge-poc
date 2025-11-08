@@ -13,10 +13,15 @@ import tempfile
 from fpdf import FPDF  # for PDF export
 from data.tenant_datasets import tenant_datasets
 
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfgen import canvas
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+from reportlab.lib.styles import getSampleStyleSheet
+
+from io import BytesIO
 
 st.write("✅ Starting UrbanEdge...")
-
-
 
 # ------------------------------
 # Mock Login (for tenants)
@@ -173,52 +178,50 @@ def fig_to_temp_png(fig, dpi=200):
 
 
 # Export PDF
-def create_pdf_with_charts(tenant, metric, total, avg, latest, chart1=None, chart2=None, chart3=None):
-    pdf = FPDF()
-    pdf.add_page()
+def create_pdf_with_charts(tenant, metric, total, avg, latest, metric_df, forecast_df):
+    buffer = BytesIO()
+
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    styles = getSampleStyleSheet()
+    story = []
 
     # Title
-    pdf.set_font("Helvetica", "B", 16)
-    pdf.cell(200, 10, f"UrbanEdge Report - {tenant}", ln=True, align="C")
+    title = Paragraph(f"<b>UrbanEdge Report – {tenant}</b>", styles["Title"])
+    story.append(title)
+    story.append(Spacer(1, 12))
 
-    # Metrics
-    pdf.set_font("Helvetica", size=12)
-    pdf.cell(200, 10, f"Metric: {metric}", ln=True)
-    pdf.cell(200, 10, f"Total: {total:.2f}", ln=True)
-    pdf.cell(200, 10, f"Average: {avg:.2f}", ln=True)
-    pdf.cell(200, 10, f"Latest Value: {latest:.2f}", ln=True)
+    # Metrics section
+    summary_text = f"""
+    <b>Metric:</b> {metric}<br/>
+    <b>Total:</b> {total:.2f}<br/>
+    <b>Average:</b> {avg:.2f}<br/>
+    <b>Latest Value:</b> {latest:.2f}<br/>
+    """
+    summary = Paragraph(summary_text, styles["BodyText"])
+    story.append(summary)
+    story.append(Spacer(1, 20))
 
-    # Trend chart (Matplotlib line chart)
+    # Trend chart
     trend_fig = generate_matplotlib_chart(metric_df, metric, chart_type="line")
     ax = trend_fig.axes[0]
     format_date_axis(ax)
-    buf = fig_to_temp_png(trend_fig, dpi=200)
-    pdf.add_page()
-    pdf.image(buf, x=10, y=20, w=180)
+    buf1 = fig_to_temp_png(trend_fig, dpi=200)
+    story.append(Image(buf1, width=450, height=250))
+    story.append(Spacer(1, 20))
 
-    # Distribution chart (Matplotlib histogram)
+    # Histogram
     hist_fig = generate_matplotlib_chart(metric_df, metric, chart_type="hist")
-    buf = fig_to_temp_png(hist_fig, dpi=200)
-    pdf.add_page()
-    pdf.image(buf, x=10, y=20, w=180)
+    buf2 = fig_to_temp_png(hist_fig, dpi=200)
+    story.append(Image(buf2, width=450, height=250))
+    story.append(Spacer(1, 20))
 
-    # Forecast chart (if provided)
-    # if forecast_df is not None and "yhat" in forecast_df:
-    # if forecast_df is not None and ("yhat1" in forecast_df or "yhat" in forecast_df):
+    # Forecast chart
     if forecast_df is not None:
-        fig, ax = plt.subplots(figsize=(6,4))
-
-        # Actual values
+        fig, ax = plt.subplots(figsize=(6, 4))
         ax.plot(metric_df["timestamp"], metric_df["value"], label="Actual", marker="o")
-
-        # Forecast with confidence intervals
-        # ax.plot(forecast_df["ds"], forecast_df["yhat"], label="Forecast", color="red")
-        
         forecast_col = "yhat1" if "yhat1" in forecast_df.columns else "yhat"
-        ax.plot(forecast_df["ds"], forecast_df[forecast_col], label="Forecast", color="red")
 
-        # ax.fill_between(forecast_df["ds"], forecast_df["yhat_lower"], forecast_df["yhat_upper"], 
-        #                color="pink", alpha=0.3, label="Confidence Interval")
+        ax.plot(forecast_df["ds"], forecast_df[forecast_col], label="Forecast", color="red")
 
         upper_col = "yhat1_upper" if "yhat1_upper" in forecast_df.columns else "yhat_upper"
         lower_col = "yhat1_lower" if "yhat1_lower" in forecast_df.columns else "yhat_lower"
@@ -230,24 +233,21 @@ def create_pdf_with_charts(tenant, metric, total, avg, latest, chart1=None, char
                 forecast_df[upper_col],
                 color="pink",
                 alpha=0.3,
-                label="Confidence Interval"
+                label="Confidence"
             )
 
-        
         format_date_axis(ax)
         ax.set_title(f"{metric} – 30 Day Forecast")
-        ax.set_xlabel("Date")
-        ax.set_ylabel("Value")
         ax.legend()
         fig.tight_layout()
 
-        buf = fig_to_temp_png(fig, dpi=200)
-        pdf.add_page()
-        pdf.image(buf, x=10, y=20, w=180)
+        buf3 = fig_to_temp_png(fig, dpi=200)
+        story.append(Image(buf3, width=450, height=250))
 
-    # Return PDF as bytes
-    # return bytes(pdf.output(dest="S"))
-    return pdf.output(dest="S").encode("latin1")
+    doc.build(story)
+
+    buffer.seek(0)
+    return buffer.getvalue()
 
 if st.button("Generate PDF Report"):
     pdf_buffer = create_pdf_with_charts(
