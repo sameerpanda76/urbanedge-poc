@@ -1,4 +1,4 @@
-import sys, os
+import sys, os, shutil
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import streamlit as st
@@ -9,14 +9,20 @@ import json
 import plotly.express as px
 import plotly.graph_objs as go
 import tempfile
+import pytorch_lightning as pl
+import neuralprophet.utils as nputils
 
 from neuralprophet import NeuralProphet
 from fpdf import FPDF  # for PDF export
 from data.tenant_datasets import tenant_datasets
 
 
+print(pl.__version__)
+
 
 st.write("✅ Starting UrbanEdge...")
+
+
 
 # ------------------------------
 # Mock Login (for tenants)
@@ -83,15 +89,45 @@ forecast_df = None
 
 try:
     
+    # Patch ProgressBarBase if missing
+    if not hasattr(pl.callbacks, "ProgressBarBase"):
+        class ProgressBarBase(pl.callbacks.Callback):
+            pass
+        pl.callbacks.ProgressBarBase = ProgressBarBase
+
+    # UNIVERSAL patch: accepts any arguments NeuralProphet sends
+    def patched_configure_trainer(*args, **kwargs):
+        # NeuralProphet usually sends config as the 2nd positional arg
+        if len(args) > 1:
+            config = args[1]
+        else:
+            config = kwargs.get("config", {})
+
+        config["enable_progress_bar"] = False
+        config["callbacks"] = []  # ✅ force no progress bar
+        config["enable_checkpointing"] = False
+        config["logger"] = False
+
+        trainer = pl.Trainer(**config)
+        return trainer, None
+    
+    nputils.configure_trainer = patched_configure_trainer
+
     train_df = metric_df.rename(columns={"timestamp": "ds", "value": "y"})
     train_df = train_df[["ds", "y"]] 
 
+    # Clean old lightning logs to avoid checkpoint load errors
+    if os.path.exists("lightning_logs"):
+        shutil.rmtree("lightning_logs")
 
     model = NeuralProphet(
-    trainer_config={
-        "enable_checkpointing": False,   # ✅ prevents saving/loading checkpoints
-        "logger": False,                 # ✅ prevents lightning_logs folder
-        "callbacks": [],                 # ✅ prevents progress bar and checkpoint callbacks
+        learning_rate=1.0,
+        trainer_config={
+            "max_epochs": 100,
+            "enable_checkpointing": False,
+            "logger": False,
+            "enable_progress_bar": False,
+            "callbacks": [],
         }
     )
 
