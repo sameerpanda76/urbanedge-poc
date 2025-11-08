@@ -9,15 +9,9 @@ import json
 import plotly.express as px
 import plotly.graph_objs as go
 import tempfile
-import pytorch_lightning as pl
-import neuralprophet.utils as nputils
 
-from neuralprophet import NeuralProphet
 from fpdf import FPDF  # for PDF export
 from data.tenant_datasets import tenant_datasets
-
-
-print(pl.__version__)
 
 
 st.write("✅ Starting UrbanEdge...")
@@ -89,29 +83,7 @@ forecast_df = None
 
 try:
     
-    # Patch ProgressBarBase if missing
-    if not hasattr(pl.callbacks, "ProgressBarBase"):
-        class ProgressBarBase(pl.callbacks.Callback):
-            pass
-        pl.callbacks.ProgressBarBase = ProgressBarBase
-
-    # UNIVERSAL patch: accepts any arguments NeuralProphet sends
-    def patched_configure_trainer(*args, **kwargs):
-        # NeuralProphet usually sends config as the 2nd positional arg
-        if len(args) > 1:
-            config = args[1]
-        else:
-            config = kwargs.get("config", {})
-
-        config["enable_progress_bar"] = False
-        config["callbacks"] = []  # ✅ force no progress bar
-        config["enable_checkpointing"] = False
-        config["logger"] = False
-
-        trainer = pl.Trainer(**config)
-        return trainer, None
-    
-    nputils.configure_trainer = patched_configure_trainer
+    from neuralprophet import NeuralProphet
 
     train_df = metric_df.rename(columns={"timestamp": "ds", "value": "y"})
     train_df = train_df[["ds", "y"]] 
@@ -120,16 +92,7 @@ try:
     if os.path.exists("lightning_logs"):
         shutil.rmtree("lightning_logs")
 
-    model = NeuralProphet(
-        learning_rate=1.0,
-        trainer_config={
-            "max_epochs": 100,
-            "enable_checkpointing": False,
-            "logger": False,
-            "enable_progress_bar": False,
-            "callbacks": [],
-        }
-    )
+    model = NeuralProphet()
 
     model.fit(train_df,freq="D")
     future = model.make_future_dataframe(train_df,periods=30)
