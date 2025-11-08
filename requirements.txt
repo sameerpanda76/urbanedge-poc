@@ -6,5 +6,4 @@ matplotlib
 plotly
 numpy<2.0
 kaleido
-fpdf2
 reportlab

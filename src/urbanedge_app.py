@@ -12,16 +12,10 @@ import tempfile
 
 from fpdf import FPDF  # for PDF export
 from data.tenant_datasets import tenant_datasets
-
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.utils import ImageReader
-from reportlab.pdfgen import canvas
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet
-
 from io import BytesIO
-
-st.write("✅ Starting UrbanEdge...")
 
 # ------------------------------
 # Mock Login (for tenants)
