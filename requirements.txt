@@ -9,7 +9,7 @@ numpy<2.0
 # forecasting dependencies
 neuralprophet==0.5.3
 torch==1.13.1
-pytorch-lightning==1.9.5
+pytorch-lightning==1.6.5
 
 
 
